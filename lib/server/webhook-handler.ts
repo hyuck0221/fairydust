@@ -36,6 +36,8 @@ type WebhookUser = {
   fairyWebhookSecretEnc: string | null;
 };
 
+type WebhookEventStatus = "success" | "failed" | "duplicate" | "test" | "processing";
+
 function verifySignature(rawBody: string, signature: string | undefined, secret: string): boolean {
   if (!signature) return false;
   const expected = crypto
@@ -56,6 +58,53 @@ function webhookLog(payload: FairyWebhookPayload | null, headers: VercelRequest[
     source: data.source,
     verified
   });
+}
+
+async function createWebhookEvent(options: {
+  userId: number;
+  mappingId?: number | null;
+  status: WebhookEventStatus;
+  statusDetail?: string | null;
+  verified: boolean;
+  payload: FairyWebhookPayload | null;
+}): Promise<number> {
+  const data = options.payload?.data || {};
+  const result = await execute(
+    `INSERT INTO webhook_events
+      (user_id, mapping_id, status, status_detail, verified, event_name, event_timestamp,
+       payment_id, amount, fairy_name, fairy_message, project_name, source, raw_payload)
+     VALUES
+      (:userId, :mappingId, :status, :statusDetail, :verified, :eventName, :eventTimestamp,
+       :paymentId, :amount, :fairyName, :fairyMessage, :projectName, :source, :rawPayload)`,
+    {
+      userId: options.userId,
+      mappingId: options.mappingId ?? null,
+      status: options.status,
+      statusDetail: options.statusDetail ?? null,
+      verified: options.verified,
+      eventName: options.payload?.event || null,
+      eventTimestamp: options.payload?.timestamp || null,
+      paymentId: data.paymentId || null,
+      amount: data.amount ?? null,
+      fairyName: data.fairyName || null,
+      fairyMessage: data.fairyMessage || null,
+      projectName: data.projectName || null,
+      source: data.source || null,
+      rawPayload: options.payload ? JSON.stringify(options.payload) : null
+    }
+  );
+
+  return result.insertId;
+}
+
+async function updateWebhookEvent(id: number, status: WebhookEventStatus, statusDetail?: string): Promise<void> {
+  await execute(
+    `UPDATE webhook_events
+     SET status = :status,
+         status_detail = :statusDetail
+     WHERE id = :id`,
+    { id, status, statusDetail: statusDetail || null }
+  );
 }
 
 export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse, token?: string): Promise<void> {
@@ -108,16 +157,37 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
   webhookLog(payload, req.headers, verified);
 
   if (!verified) {
+    await createWebhookEvent({
+      userId: webhookUser.id,
+      status: "failed",
+      statusDetail: "Invalid signature",
+      verified,
+      payload
+    });
     res.status(401).json({ error: "Invalid signature" });
     return;
   }
 
   if (!payload?.data?.paymentId || !payload.data.projectName) {
+    await createWebhookEvent({
+      userId: webhookUser.id,
+      status: "failed",
+      statusDetail: "data.paymentId and data.projectName are required",
+      verified,
+      payload
+    });
     res.status(400).json({ error: "data.paymentId and data.projectName are required" });
     return;
   }
 
   if (payload.data.source === "test") {
+    await createWebhookEvent({
+      userId: webhookUser.id,
+      status: "test",
+      statusDetail: "Test source, business logic skipped",
+      verified,
+      payload
+    });
     res.status(200).json({ ok: true, skipped: true, reason: "test source" });
     return;
   }
@@ -149,6 +219,13 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
   );
 
   if (!mapping) {
+    await createWebhookEvent({
+      userId: webhookUser.id,
+      status: "failed",
+      statusDetail: "No mapping found for projectName",
+      verified,
+      payload
+    });
     res.status(404).json({ error: "No mapping found for token and projectName" });
     return;
   }
@@ -159,28 +236,17 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
   );
 
   if (existing) {
+    await createWebhookEvent({
+      userId: webhookUser.id,
+      mappingId: mapping.id,
+      status: "duplicate",
+      statusDetail: "Duplicate paymentId, skipped",
+      verified,
+      payload
+    });
     res.status(200).json({ ok: true, duplicate: true });
     return;
   }
-
-  await execute(
-    `INSERT INTO payments
-      (mapping_id, payment_id, event, amount, fairy_name, fairy_email, fairy_message, project_name, source, raw_payload)
-     VALUES
-      (:mappingId, :paymentId, :event, :amount, :fairyName, :fairyEmail, :fairyMessage, :projectName, :source, :rawPayload)`,
-    {
-      mappingId: mapping.id,
-      paymentId: payload.data.paymentId,
-      event: payload.event || "unknown",
-      amount: payload.data.amount ?? null,
-      fairyName: payload.data.fairyName || null,
-      fairyEmail: payload.data.fairyEmail || null,
-      fairyMessage: payload.data.fairyMessage || null,
-      projectName: payload.data.projectName,
-      source: payload.data.source || null,
-      rawPayload: JSON.stringify(payload)
-    }
-  );
 
   const line = sponsorLine({
     fairyName: payload.data.fairyName,
@@ -191,13 +257,49 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
     showMessage: Boolean(mapping.showMessage)
   });
 
-  await upsertReadmeSponsorBlock({
-    octokit: octokitForUser(mapping),
-    owner: mapping.repoOwner,
-    repo: mapping.repoName,
-    path: mapping.targetFile,
-    line
+  const eventId = await createWebhookEvent({
+    userId: webhookUser.id,
+    mappingId: mapping.id,
+    status: "processing",
+    statusDetail: "Updating GitHub file",
+    verified,
+    payload
   });
+
+  try {
+    await upsertReadmeSponsorBlock({
+      octokit: octokitForUser(mapping),
+      owner: mapping.repoOwner,
+      repo: mapping.repoName,
+      path: mapping.targetFile,
+      line
+    });
+
+    await execute(
+      `INSERT INTO payments
+        (mapping_id, payment_id, event, amount, fairy_name, fairy_email, fairy_message, project_name, source, raw_payload)
+       VALUES
+        (:mappingId, :paymentId, :event, :amount, :fairyName, :fairyEmail, :fairyMessage, :projectName, :source, :rawPayload)`,
+      {
+        mappingId: mapping.id,
+        paymentId: payload.data.paymentId,
+        event: payload.event || "unknown",
+        amount: payload.data.amount ?? null,
+        fairyName: payload.data.fairyName || null,
+        fairyEmail: payload.data.fairyEmail || null,
+        fairyMessage: payload.data.fairyMessage || null,
+        projectName: payload.data.projectName,
+        source: payload.data.source || null,
+        rawPayload: JSON.stringify(payload)
+      }
+    );
+
+    await updateWebhookEvent(eventId, "success", "GitHub file updated");
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown GitHub update error";
+    await updateWebhookEvent(eventId, "failed", detail);
+    throw error;
+  }
 
   res.status(200).json({ ok: true });
 }

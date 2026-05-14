@@ -49,3 +49,27 @@ CREATE TABLE IF NOT EXISTS payments (
   UNIQUE KEY payments_payment_id_unique (payment_id),
   CONSTRAINT payments_mapping_fk FOREIGN KEY (mapping_id) REFERENCES webhook_mappings (id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  mapping_id BIGINT UNSIGNED NULL,
+  status VARCHAR(32) NOT NULL,
+  status_detail TEXT NULL,
+  verified BOOLEAN NOT NULL DEFAULT FALSE,
+  event_name VARCHAR(255) NULL,
+  event_timestamp VARCHAR(255) NULL,
+  payment_id VARCHAR(255) NULL,
+  amount BIGINT NULL,
+  fairy_name VARCHAR(255) NULL,
+  fairy_message TEXT NULL,
+  project_name VARCHAR(255) NULL,
+  source VARCHAR(255) NULL,
+  raw_payload JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY webhook_events_user_created_idx (user_id, created_at),
+  KEY webhook_events_project_idx (user_id, project_name, created_at),
+  CONSTRAINT webhook_events_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT webhook_events_mapping_fk FOREIGN KEY (mapping_id) REFERENCES webhook_mappings (id) ON DELETE SET NULL
+);
