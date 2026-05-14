@@ -131,6 +131,7 @@ function App() {
       .catch(() => setUser(null));
   }, []);
 
+  if (path === "/guide") return <GuidePage user={user || null} />;
   if (path === "/terms") return <LegalPage type="terms" user={user || null} />;
   if (path === "/privacy") return <LegalPage type="privacy" user={user || null} />;
 
@@ -781,6 +782,13 @@ function Dashboard({ initialUser }: { initialUser: User }) {
           </div>
         </div>
       </section>
+
+      <footer className="dashboard-footer">
+        <a href="/">홈</a>
+        <a href="/guide">가이드</a>
+        <a href="/terms">이용약관</a>
+        <a href="/privacy">데이터처리방침</a>
+      </footer>
     </main>
   );
 }
@@ -864,6 +872,7 @@ function LandingPage() {
           Fairydust
         </a>
         <div>
+          <a href="/guide">가이드</a>
           <a href="/terms">이용약관</a>
           <a href="/privacy">데이터처리방침</a>
           <a className="nav-login" href="/api/auth/github/start">GitHub 로그인</a>
@@ -1018,6 +1027,117 @@ function LandingPage() {
   );
 }
 
+function GuidePage({ user }: { user: User | null }) {
+  return (
+    <main className="public-shell legal-shell">
+      <nav className="public-nav">
+        <a className="public-brand" href="/">
+          <Sparkles size={20} />
+          Fairydust
+        </a>
+        <div>
+          <a href="/guide">가이드</a>
+          <a href="/terms">이용약관</a>
+          <a href="/privacy">데이터처리방침</a>
+          <a className="nav-login" href={user ? "/" : "/api/auth/github/start"}>{user ? "대시보드" : "GitHub 로그인"}</a>
+        </div>
+      </nav>
+
+      <article className="legal-card guide-card">
+        <h1>Fairydust 사용 가이드</h1>
+        <p>Fairy 후원 소식을 GitHub 저장소에 자동으로 남기기 위한 기본 설정 순서입니다.</p>
+
+        <div className="guide-steps">
+          <section>
+            <span>01</span>
+            <div>
+              <h2>GitHub로 로그인</h2>
+              <p>Fairydust에 GitHub로 로그인하면 내 저장소 목록을 불러올 수 있습니다. 후원 정보를 기록할 저장소에 쓰기 권한이 있는 계정으로 로그인해주세요.</p>
+            </div>
+            <div className="guide-visual login-visual" aria-hidden="true">
+              <div className="mini-browser-bar">
+                <i />
+                <i />
+                <i />
+              </div>
+              <div className="mini-login-card">
+                <Github size={22} />
+                <strong>GitHub로 계속하기</strong>
+                <small>저장소 목록을 불러옵니다</small>
+              </div>
+            </div>
+          </section>
+          <section>
+            <span>02</span>
+            <div>
+              <h2>Webhook 링크와 시크릿 키 설정</h2>
+              <p>대시보드의 Webhook 설정에서 유저 전용 URL을 복사해 Fairy 관리자에 등록합니다. Fairy에서 사용할 secret과 Fairydust에 저장할 secret은 같은 값이어야 합니다.</p>
+            </div>
+            <div className="guide-visual webhook-visual" aria-hidden="true">
+              <div className="copy-row">
+                <code>fairydust.kr/webhook/••••</code>
+                <Copy size={15} />
+              </div>
+              <div className="secret-row">
+                <span>secret</span>
+                <b>••••••••••••</b>
+              </div>
+              <div className="pulse-line" />
+            </div>
+          </section>
+          <section>
+            <span>03</span>
+            <div>
+              <h2>템플릿과 표시 옵션 선택</h2>
+              <p>후원자 이름, 금액, 메시지 표시 여부를 고르고 기본 템플릿 또는 직접 만든 템플릿을 선택합니다. 템플릿에서는 {"{NAME}"}, {"{AMOUNT}"}, {"{MESSAGE}"}, {"{DATE}"} 같은 변수를 사용할 수 있습니다.</p>
+            </div>
+            <div className="guide-visual template-visual" aria-hidden="true">
+              <div className="toggle-row">
+                <span>이름</span>
+                <i />
+                <span>금액</span>
+                <i />
+                <span>메시지</span>
+              </div>
+              <div className="markdown-card">
+                <b>홍길동</b>
+                <p>10,000원 · 응원합니다!</p>
+              </div>
+            </div>
+          </section>
+          <section>
+            <span>04</span>
+            <div>
+              <h2>연결 등록 및 테스트</h2>
+              <p>저장소, 후원 항목 이름, 반영할 .md 파일을 입력한 뒤 연결을 만듭니다. 등록 후 실제 테스트 버튼으로 GitHub 파일에 잘 반영되는지 확인할 수 있습니다.</p>
+            </div>
+            <div className="guide-visual test-visual" aria-hidden="true">
+              <div className="repo-line">
+                <Github size={16} />
+                <strong>owner/project</strong>
+                <em>README.md</em>
+              </div>
+              <div className="test-button-fake">
+                <Sparkles size={15} />
+                실제 테스트
+              </div>
+              <div className="success-toast">GitHub 반영 완료</div>
+            </div>
+          </section>
+        </div>
+
+        <div className="guide-note">
+          <h2>Fairydust 영역 감지 방식</h2>
+          <p>Fairydust는 설정한 .md 파일에서 아래 주석 사이를 찾아 후원 내역을 갱신합니다.</p>
+          <pre>{`<!-- FAIRYDUST:START -->
+<!-- FAIRYDUST:END -->`}</pre>
+          <p>이미 이 영역이 있으면 그 사이에 새 후원 내역을 쌓고, 없으면 파일 아래쪽에 Fairydust 영역을 자동으로 만듭니다.</p>
+        </div>
+      </article>
+    </main>
+  );
+}
+
 function LegalPage({ type, user }: { type: "terms" | "privacy"; user: User | null }) {
   const isTerms = type === "terms";
   return (
@@ -1028,6 +1148,7 @@ function LegalPage({ type, user }: { type: "terms" | "privacy"; user: User | nul
           Fairydust
         </a>
         <div>
+          <a href="/guide">가이드</a>
           <a href={isTerms ? "/privacy" : "/terms"}>{isTerms ? "데이터처리방침" : "이용약관"}</a>
           <a className="nav-login" href={user ? "/" : "/api/auth/github/start"}>{user ? "대시보드" : "GitHub 로그인"}</a>
         </div>
@@ -1069,6 +1190,9 @@ function PrivacyContent() {
     <>
       <h2>저장하는 정보</h2>
       <p>Fairydust는 GitHub 계정 식별 정보, 프로필 이름과 아바타, 암호화된 GitHub 연결 토큰, 암호화된 Fairy secret, 사용자가 등록한 저장소 연결 정보, 후원 알림 처리 이력을 DB에 저장합니다.</p>
+      <h2>GitHub 연결과 파일 수정 방식</h2>
+      <p>Fairydust는 사용자가 GitHub로 로그인할 때 승인한 권한으로 GitHub API를 호출합니다. 후원 알림을 받으면 사용자가 직접 등록한 저장소와 .md 파일만 대상으로 하며, 해당 파일의 Fairydust 영역을 갱신하는 커밋을 생성합니다.</p>
+      <p>현재 GitHub 파일 수정 커밋은 별도의 Fairydust 봇 계정이 아니라, 저장소를 연결한 GitHub 사용자 권한으로 생성됩니다. 사용자는 GitHub 계정 설정에서 언제든지 Fairydust의 OAuth App 접근 권한을 철회할 수 있으며, 철회 후에는 GitHub 파일 자동 반영이 동작하지 않을 수 있습니다.</p>
       <h2>후원 알림 이력</h2>
       <p>모니터링과 문제 해결을 위해 수신 시각, 처리 결과, 후원 금액, 후원자 이름, 응원 메시지, 연결된 저장소와 파일 정보를 저장할 수 있습니다. Fairy에서 전달되지 않은 항목은 저장하지 않습니다.</p>
       <h2>이용 목적</h2>
