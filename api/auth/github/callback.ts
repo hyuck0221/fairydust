@@ -2,11 +2,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
 import { parse, serialize } from "cookie";
 import { Octokit } from "@octokit/rest";
-import { appBaseUrl, requiredEnv } from "../../../lib/server/env";
-import { method } from "../../../lib/server/http";
-import { encryptText } from "../../../lib/server/crypto";
-import { execute, queryOne } from "../../../lib/server/db";
-import { setSessionCookie } from "../../../lib/server/session";
+import { appBaseUrl, requiredEnv } from "../../../lib/server/env.js";
+import { method } from "../../../lib/server/http.js";
+import { encryptText } from "../../../lib/server/crypto.js";
+import { execute, queryOne } from "../../../lib/server/db.js";
+import { setSessionCookie } from "../../../lib/server/session.js";
 
 type UserRow = { id: number };
 

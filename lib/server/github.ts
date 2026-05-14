@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
-import { decryptText } from "./crypto";
-import type { SessionUser } from "./session";
+import { decryptText } from "./crypto.js";
+import type { SessionUser } from "./session.js";
 
 export function octokitForUser(user: SessionUser): Octokit {
   return new Octokit({ auth: decryptText(user.githubAccessTokenEnc) });

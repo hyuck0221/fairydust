@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { requiredEnv } from "./env";
+import { requiredEnv } from "./env.js";
 
 function encryptionKey(): Buffer {
   const raw = requiredEnv("APP_ENCRYPTION_KEY");

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { method } from "../lib/server/http";
-import { execute, queryRows, queryOne } from "../lib/server/db";
-import { requireSessionUser } from "../lib/server/session";
+import { method } from "../lib/server/http.js";
+import { execute, queryRows, queryOne } from "../lib/server/db.js";
+import { requireSessionUser } from "../lib/server/session.js";
 
 type MappingRow = {
   id: number;

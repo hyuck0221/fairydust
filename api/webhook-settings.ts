@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { appBaseUrl } from "../lib/server/env";
-import { method } from "../lib/server/http";
-import { encryptText } from "../lib/server/crypto";
-import { execute, queryOne } from "../lib/server/db";
-import { requireSessionUser } from "../lib/server/session";
+import { appBaseUrl } from "../lib/server/env.js";
+import { method } from "../lib/server/http.js";
+import { encryptText } from "../lib/server/crypto.js";
+import { execute, queryOne } from "../lib/server/db.js";
+import { requireSessionUser } from "../lib/server/session.js";
 
 type SettingsRow = {
   webhookToken: string;

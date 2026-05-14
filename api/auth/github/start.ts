@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
 import { serialize } from "cookie";
-import { appBaseUrl, requiredEnv } from "../../../lib/server/env";
-import { method } from "../../../lib/server/http";
+import { appBaseUrl, requiredEnv } from "../../../lib/server/env.js";
+import { method } from "../../../lib/server/http.js";
 
 export default function handler(req: VercelRequest, res: VercelResponse): void {
   if (!method(req, res, ["GET"])) return;

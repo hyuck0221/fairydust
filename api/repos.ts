@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { method } from "../lib/server/http";
-import { requireSessionUser } from "../lib/server/session";
-import { octokitForUser } from "../lib/server/github";
+import { method } from "../lib/server/http.js";
+import { requireSessionUser } from "../lib/server/session.js";
+import { octokitForUser } from "../lib/server/github.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!method(req, res, ["GET"])) return;

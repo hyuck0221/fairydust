@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { parse, serialize } from "cookie";
-import { sign, safeEqual } from "./crypto";
-import { queryOne } from "./db";
+import { sign, safeEqual } from "./crypto.js";
+import { queryOne } from "./db.js";
 
 const cookieName = "fairydust_session";
 

@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
-import { method, readRawBody } from "./http";
-import { execute, queryOne } from "./db";
-import { decryptText, safeEqual } from "./crypto";
-import { octokitForUser, upsertReadmeSponsorBlock } from "./github";
-import { sponsorLine, type FairyWebhookPayload } from "./sponsor";
+import { method, readRawBody } from "./http.js";
+import { execute, queryOne } from "./db.js";
+import { decryptText, safeEqual } from "./crypto.js";
+import { octokitForUser, upsertReadmeSponsorBlock } from "./github.js";
+import { sponsorLine, type FairyWebhookPayload } from "./sponsor.js";
 
 type WebhookMapping = {
   id: number;
