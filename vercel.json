@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/webhook/:token",
+      "destination": "/api/webhook/:token"
+    },
+    {
+      "source": "/webhook",
+      "destination": "/api/webhook"
+    },
+    {
+      "source": "/((?!api/|webhook|assets/|src/|node_modules/|@vite/|@react-refresh).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
