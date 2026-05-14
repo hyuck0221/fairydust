@@ -336,7 +336,7 @@ function App() {
                 value={form.repoFullName}
                 onChange={(event) => setForm((current) => ({ ...current, repoFullName: event.target.value }))}
                 required
-              >
+              > 
                 {repos.map((repo) => (
                   <option key={repo.id} value={repo.fullName}>
                     {repo.fullName}{repo.private ? " · private" : ""}
