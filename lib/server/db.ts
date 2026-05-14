@@ -47,3 +47,18 @@ export async function execute(sql: string, params: Record<string, unknown> = {})
   const [result] = await getPool().execute(sql, params as never);
   return result as mysql.ResultSetHeader;
 }
+
+export async function withTransaction<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await callback(connection);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}

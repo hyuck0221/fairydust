@@ -24,11 +24,13 @@ CREATE TABLE IF NOT EXISTS webhook_mappings (
   show_name BOOLEAN NOT NULL DEFAULT TRUE,
   show_amount BOOLEAN NOT NULL DEFAULT FALSE,
   show_message BOOLEAN NOT NULL DEFAULT FALSE,
+  template_key VARCHAR(64) NOT NULL DEFAULT 'simple',
+  template_body TEXT NULL,
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY webhook_mappings_project_repo_unique (user_id, repo_owner, repo_name, project_name),
+  UNIQUE KEY webhook_mappings_user_repo_unique (user_id, repo_owner, repo_name),
   CONSTRAINT webhook_mappings_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 

@@ -4,7 +4,7 @@ import { method, readRawBody } from "./http.js";
 import { execute, queryOne } from "./db.js";
 import { decryptText, safeEqual } from "./crypto.js";
 import { octokitForUser, upsertReadmeSponsorBlock } from "./github.js";
-import { sponsorLine, type FairyWebhookPayload } from "./sponsor.js";
+import { renderSponsorEntry, type FairyWebhookPayload } from "./sponsor.js";
 
 type WebhookMapping = {
   id: number;
@@ -16,6 +16,8 @@ type WebhookMapping = {
   showName: number;
   showAmount: number;
   showMessage: number;
+  templateKey: string;
+  templateBody: string | null;
   githubId: number;
   githubLogin: string;
   githubName: string | null;
@@ -203,6 +205,8 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
       wm.show_name AS showName,
       wm.show_amount AS showAmount,
       wm.show_message AS showMessage,
+      wm.template_key AS templateKey,
+      wm.template_body AS templateBody,
       u.github_id AS githubId,
       u.github_login AS githubLogin,
       u.github_name AS githubName,
@@ -248,10 +252,13 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
     return;
   }
 
-  const line = sponsorLine({
+  const entry = renderSponsorEntry({
     fairyName: payload.data.fairyName,
     amount: payload.data.amount,
     fairyMessage: payload.data.fairyMessage,
+    projectName: payload.data.projectName,
+    templateKey: mapping.templateKey,
+    templateBody: mapping.templateBody,
     showName: Boolean(mapping.showName),
     showAmount: Boolean(mapping.showAmount),
     showMessage: Boolean(mapping.showMessage)
@@ -272,7 +279,8 @@ export async function handleFairyWebhook(req: VercelRequest, res: VercelResponse
       owner: mapping.repoOwner,
       repo: mapping.repoName,
       path: mapping.targetFile,
-      line
+      entry,
+      templateKey: mapping.templateKey
     });
 
     await execute(
